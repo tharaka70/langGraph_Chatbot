@@ -1,27 +1,50 @@
 import os
 from dotenv import load_dotenv
 
-from langchain.prompts import PromptTemplate
+from langchain.prompts import PromptTemplate, ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
 from langchain_openai import AzureChatOpenAI
 from langgraph.graph import StateGraph, END, START
+from langchain_core.messages import SystemMessage, HumanMessage 
 
 # Load environment variables from .env file
 load_dotenv()
 # print(os.environ)
 
-# PROMPT 1: Generate character type (e.g., wizard, warrior)
-character_prompt = PromptTemplate.from_template(
-    "Generate a fantasy character type for someone named {name}. Reply ONLY with the type."
+# System prompt for character generation
+character_system_prompt = SystemMessagePromptTemplate.from_template(
+    "You are a fantasy story writer. Generate a character type based on the name."
 )
 
-# PROMPT 2: Generate a setting based on character type
-setting_prompt = PromptTemplate.from_template(
-    "Create a magical setting for a {character_type}. Reply with ONE sentence."
+# System prompt for setting generation
+setting_system_prompt = SystemMessagePromptTemplate.from_template(
+    "You are a world-building expert. Create a setting that fits the character."
 )
 
-# PROMPT 3: Generate a plot using name, type, and setting
-plot_prompt = PromptTemplate.from_template(
-    "Write a short story about {name}, a {character_type}, exploring {setting}."
+# System prompt for plot generation
+plot_system_prompt = SystemMessagePromptTemplate.from_template(
+    "You are a storyteller. Write a short plot involving the character and setting."
+)
+
+# Character generation prompt
+character_prompt = ChatPromptTemplate.from_messages([
+    character_system_prompt,
+    HumanMessagePromptTemplate.from_template("Generate a fantasy character type for someone named {name}. Reply ONLY with the type.")
+]
+)
+
+
+# Setting generation prompt
+setting_prompt = ChatPromptTemplate.from_messages([
+    setting_system_prompt,
+    HumanMessagePromptTemplate.from_template("Create a magical setting for a character named {name} who is a {character_type}. Reply with ONE sentence.")
+]
+)
+
+# Plot generation prompt
+plot_prompt = ChatPromptTemplate.from_messages([
+    plot_system_prompt,
+    HumanMessagePromptTemplate.from_template("Write a short story about {name}, a {character_type}, exploring {setting}.")
+]
 )
 
 
@@ -31,36 +54,40 @@ llm = AzureChatOpenAI(
     openai_api_version=os.environ["AZURE_OPENAI_API_VERSION"],
 )
 
-# --- Node 1: Generate Character Type ---
 def generate_character(state):
-    # Format the prompt with the current state (name)
-    formatted_prompt = character_prompt.format(name=state["name"])
+    print("Current state:", state)  # Print initial state
+    print("Character prompt:", character_prompt)  # Print the prompt template
     
-    # Call the LLM
-    response = llm.invoke(formatted_prompt)
-    
-    # Update state with the result
-    state["character_type"] = response.content.strip()  # e.g., "wizard"
-    return state
+    try:
+        messages = character_prompt.format_messages(name=state["name"])
+        print("Formatted messages:", messages)  # Print formatted messages
+        
+        response = llm.invoke(messages)
+        print("LLM response:", response)  # Print LLM response
+        
+        state["character_type"] = response.content.strip()
+        print("Updated state:", state)  # Print final state
+        return state
+    except Exception as e:
+        print(f"Error occurred: {type(e).__name__}: {str(e)}")  # Print any errors
+        raise
 
-# --- Node 2: Generate Setting ---
 def generate_setting(state):
-    formatted_prompt = setting_prompt.format(
-        character_type=state["character_type"]
+    messages = setting_prompt.format_messages(
+        character_type=state["character_type"],
+        name = state["name"]
     )
-    response = llm.invoke(formatted_prompt)
-    state["setting"] = response.content.strip()  # e.g., "a floating castle in the sky"
+    response = llm.invoke(messages)
+    state["setting"] = response.content.strip()
     return state
 
-# --- Node 3: Generate Plot ---
 def generate_plot(state):
-    print(state)
-    formatted_prompt = plot_prompt.format(
+    messages = plot_prompt.format_messages(
         name=state["name"],
         character_type=state["character_type"],
         setting=state["setting"]
     )
-    response = llm.invoke(formatted_prompt)
+    response = llm.invoke(messages)
     state["plot"] = response.content.strip()
     return state
 
@@ -88,9 +115,9 @@ result = chain.invoke({"name": "Harry potter"})
 print("First Story: >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 print(result["plot"])
 
-# Start with the initial state (name="Luna")
-result = chain.invoke({"name": "Lightning_macquine"})
+# # Start with the initial state (name="Luna")
+# result = chain.invoke({"name": "Lightning_macquine"})
 
-# Print the final story
-print("Second Story: >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-print(result["plot"])
+# # Print the final story
+# print("Second Story: >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+# print(result["plot"])
