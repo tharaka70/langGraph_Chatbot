@@ -54,23 +54,12 @@ llm = AzureChatOpenAI(
     openai_api_version=os.environ["AZURE_OPENAI_API_VERSION"],
 )
 
-def generate_character(state):
-    print("Current state:", state)  # Print initial state
-    print("Character prompt:", character_prompt)  # Print the prompt template
-    
-    try:
-        messages = character_prompt.format_messages(name=state["name"])
-        print("Formatted messages:", messages)  # Print formatted messages
-        
-        response = llm.invoke(messages)
-        print("LLM response:", response)  # Print LLM response
-        
-        state["character_type"] = response.content.strip()
-        print("Updated state:", state)  # Print final state
-        return state
-    except Exception as e:
-        print(f"Error occurred: {type(e).__name__}: {str(e)}")  # Print any errors
-        raise
+def generate_character(state):    
+    messages = character_prompt.format_messages(name=state["name"])
+    response = llm.invoke(messages)
+    state["character_type"] = response.content.strip()
+    return state
+
 
 def generate_setting(state):
     messages = setting_prompt.format_messages(
