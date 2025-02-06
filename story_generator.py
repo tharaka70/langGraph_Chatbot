@@ -1,10 +1,10 @@
 import os
 from dotenv import load_dotenv
 
-from langchain.prompts import PromptTemplate, ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
+from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
 from langchain_openai import AzureChatOpenAI
 from langgraph.graph import StateGraph, END, START
-from langchain_core.messages import SystemMessage, HumanMessage 
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -112,12 +112,5 @@ chain = workflow.compile()
 result = chain.invoke({"name": "Harry potter"})
 
 # Print the final story
-print("First Story: >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 print(result["plot"])
 
-# # Start with the initial state (name="Luna")
-# result = chain.invoke({"name": "Lightning_macquine"})
-
-# # Print the final story
-# print("Second Story: >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-# print(result["plot"])
