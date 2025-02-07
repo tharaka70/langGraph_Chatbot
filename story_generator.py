@@ -55,27 +55,30 @@ llm = AzureChatOpenAI(
 )
 
 def generate_character(state):    
-    messages = character_prompt.format_messages(name=state["name"])
+    # messages = character_prompt.format_messages(name=state["name"])
+    messages = character_prompt.format(**state)
     response = llm.invoke(messages)
     state["character_type"] = response.content.strip()
     return state
 
 
 def generate_setting(state):
-    messages = setting_prompt.format_messages(
-        character_type=state["character_type"],
-        name = state["name"]
-    )
+    # messages = setting_prompt.format_messages(
+    #     character_type=state["character_type"],
+    #     name = state["name"]
+    # )
+    messages = setting_prompt.format(**state)  
     response = llm.invoke(messages)
     state["setting"] = response.content.strip()
     return state
 
 def generate_plot(state):
-    messages = plot_prompt.format_messages(
-        name=state["name"],
-        character_type=state["character_type"],
-        setting=state["setting"]
-    )
+    # messages = plot_prompt.format_messages(
+    #     name=state["name"],
+    #     character_type=state["character_type"],
+    #     setting=state["setting"]
+    # )
+    messages = plot_prompt.format(**state)  
     response = llm.invoke(messages)
     state["plot"] = response.content.strip()
     return state
